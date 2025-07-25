@@ -5,6 +5,7 @@ class DW_Encoder(nn.Module):
     def __init__(self, message_length, blocks=2, channels=64, attention=None):
         super(DW_Encoder, self).__init__()
 
+        # 下采样
         self.conv1 = ConvBlock(3, 16, blocks=blocks)
         self.down1 = Down(16, 32, blocks=blocks)
         self.down2 = Down(32, 64, blocks=blocks)
@@ -46,17 +47,23 @@ class DW_Encoder(nn.Module):
         d0 = self.conv1(x)
         d1 = self.down1(d0)
         d2 = self.down2(d1)
+        # channel 为 128
         d3 = self.down3(d2)
 
         d4 = self.down4(d3)
 
         u3 = self.up3(d4)
+        # (B, message) ---> (B, message * message)
         expanded_message = self.linear3(watermark)
+        # (B, message * message) ---> (B, 1, message, message)
         expanded_message = expanded_message.view(-1, 1, self.message_length, self.message_length)
+        # (B, 1, message, message) ---> (B, 1, H / 8, W / 8)
         expanded_message = F.interpolate(expanded_message, size=(d3.shape[2], d3.shape[3]),
                                                            mode='nearest')
+        # (B, 1, H / 8, W / 8) ---> (B, 64, H / 8, W / 8) 
         expanded_message = self.Conv_message3(expanded_message)
         u3 = torch.cat((d3, u3, expanded_message), dim=1)
+        # 128 * 2 + 64
         u3 = self.att3(u3)
 
         u2 = self.up2(u3)
@@ -86,6 +93,7 @@ class DW_Encoder(nn.Module):
         u0 = torch.cat((d0, u0, expanded_message), dim=1)
         u0 = self.att0(u0)
 
+        # 16 + 3 ---> 3
         image = self.Conv_1x1(torch.cat((x, u0), dim=1))
 
         forward_image = image.clone().detach()
@@ -100,6 +108,7 @@ class DW_Encoder(nn.Module):
         gap = read_image - forward_image'''
         gap = forward_image.clamp(-1, 1) - forward_image
 
+        # gap是没有梯度的
         return image + gap
 
 

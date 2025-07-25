@@ -6,6 +6,7 @@ class Random_Noise(nn.Module):
 
     def __init__(self, layers, len_layers_R, len_layers_F):
         super(Random_Noise, self).__init__()
+        # 这里的layers就是len_layers_R + len_layers_F
         for i in range(len(layers)):
             layers[i] = eval(layers[i])
         self.noise = nn.Sequential(*layers)
@@ -26,7 +27,9 @@ class Random_Noise(nn.Module):
         noised_image_R = torch.zeros_like(forward_image)
         noised_image_F = torch.zeros_like(forward_image)
 
+        # 不要忘了batch_size维度
         for index in range(forward_image.shape[0]):
+            # C用于鲁棒 R F用于脆弱
             random_noise_layer_C = np.random.choice(self.noise, 1)[0]
             random_noise_layer_R = np.random.choice(self.noise[0:self.len_layers_R], 1)[0]
             random_noise_layer_F = np.random.choice(self.noise[self.len_layers_R:self.len_layers_R + self.len_layers_F], 1)[0]
@@ -55,5 +58,5 @@ class Random_Noise(nn.Module):
         noised_image_gap_C = noised_image_C.clamp(-1, 1) - forward_image
         noised_image_gap_R = noised_image_R.clamp(-1, 1) - forward_image
         noised_image_gap_F = noised_image_F.clamp(-1, 1) - forward_image
-
+        # 返回三个batch的图像
         return image + noised_image_gap_C, image + noised_image_gap_R, image + noised_image_gap_F

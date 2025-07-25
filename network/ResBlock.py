@@ -160,6 +160,7 @@ class BottleneckBlock(nn.Module):
         super(BottleneckBlock, self).__init__()
 
         self.change = None
+        # 便于残差连接
         if (in_channels != out_channels or stride != 1):
             self.change = nn.Sequential(
                 nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, padding=0,
@@ -167,6 +168,7 @@ class BottleneckBlock(nn.Module):
                 nn.InstanceNorm2d(out_channels)
             )
 
+        # (B, C, H, W) ---> (B, C, H, W)
         self.left = nn.Sequential(
             nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1,
                       stride=stride, padding=0, bias=False),
@@ -209,7 +211,7 @@ class ResBlock(nn.Module):
 
     def __init__(self, in_channels, out_channels, blocks=1, block_type="BottleneckBlock", reduction=8, stride=1, attention=None):
         super(ResBlock, self).__init__()
-
+        # eval 是 Python 中的动态执行函数，它将字符串作为 Python 代码来执行
         layers = [eval(block_type)(in_channels, out_channels, reduction, stride, attention=attention)] if blocks != 0 else []
         for _ in range(blocks - 1):
             layer = eval(block_type)(out_channels, out_channels, reduction, 1, attention=attention)

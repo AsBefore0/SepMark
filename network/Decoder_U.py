@@ -5,7 +5,7 @@ class DW_Decoder(nn.Module):
 
     def __init__(self, message_length, blocks=2, channels=64, attention=None):
         super(DW_Decoder, self).__init__()
-
+        # 下采样 不断增大通道数  减少图像的空间分辨率
         self.conv1 = ConvBlock(3, 16, blocks=blocks)
         self.down1 = Down(16, 32, blocks=blocks)
         self.down2 = Down(32, 64, blocks=blocks)
@@ -13,7 +13,10 @@ class DW_Decoder(nn.Module):
 
         self.down4 = Down(128, 256, blocks=blocks)
 
+        # 上采样 不断减小通道数  增大图像的空间分辨率
+        # 同时 
         self.up3 = UP(256, 128)
+        # 由于每一步会和下采样的拼接  所以需要 128 * 2
         self.att3 = ResBlock(128 * 2, 128, blocks=blocks, attention=attention)
 
         self.up2 = UP(128, 64)
@@ -56,10 +59,11 @@ class DW_Decoder(nn.Module):
         u0 = self.att0(u0)
 
         residual = self.Conv_1x1(u0)
-
+        # (B, 1, H, W) -> (B, 1, message_length, message_length)
         message = F.interpolate(residual, size=(self.message_length, self.message_length),
                                                            mode='nearest')
         message = message.view(message.shape[0], -1)
+        # (B, message_length * message_length) -> (B, message_length)
         message = self.message_layer(message)
 
         return message
@@ -69,7 +73,10 @@ class Down(nn.Module):
     def __init__(self, in_channels, out_channels, blocks):
         super(Down, self).__init__()
         self.layer = torch.nn.Sequential(
+            # (B, C_in, H, W) -> (B, C_in, H / 2, W / 2)
             ConvBlock(in_channels, in_channels, stride=2),
+            # (B, C_in, H / 2, W / 2) -> (B, C_out, H / 2, W / 2)
+            # 默认 blocks = 2
             ConvBlock(in_channels, out_channels, blocks=blocks)
         )
 
@@ -80,8 +87,11 @@ class Down(nn.Module):
 class UP(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(UP, self).__init__()
+        # (B, C_in, H, W) -> (B, C_out, H, W)
         self.conv = ConvBlock(in_channels, out_channels)
 
     def forward(self, x):
+        # (B, C_in, H, W) -> (B, C_in, H * 2, W * 2)
+        # 使用最近邻插值进行上采样
         x = F.interpolate(x, scale_factor=2, mode='nearest')
         return self.conv(x)

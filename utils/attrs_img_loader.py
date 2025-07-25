@@ -29,7 +29,9 @@ class attrsImgDataset(Dataset):
 
     def preprocess(self):
         """Preprocess the CelebA attribute file."""
+        # 读取每一行内容
         lines = [line.rstrip() for line in open(self.attr_path, 'r')]
+        # 第一行是属性名称
         all_attr_names = lines[1].split()
         for i, attr_name in enumerate(all_attr_names):
             self.attr2idx[attr_name] = i
@@ -39,6 +41,7 @@ class attrsImgDataset(Dataset):
         for i, line in enumerate(lines):
             split = line.split()
             basename = os.path.basename(split[0])
+            # 分割扩展名.jpg
             filename = os.path.splitext(basename)[0]
             values = split[1:]
 
@@ -46,7 +49,10 @@ class attrsImgDataset(Dataset):
             for attr_name in self.selected_attrs:
                 idx = self.attr2idx[attr_name]
                 label.append(values[idx] == '1')
-
+#           self.list = [
+#               ["00001.png", [False, True, True, False, False]],   # 第一张图像及其属性
+#               ["00002.png", [True, False, False, True, True]],    # 第二张图像及其属性
+#           ]
             if os.path.exists(os.path.join(self.image_dir, str(filename).zfill(5) + ".png")):
                 self.list.append([str(filename).zfill(5) + ".png", label])
 

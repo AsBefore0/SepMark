@@ -109,7 +109,7 @@ class Network:
 			# psnr
 			psnr = - kornia.losses.psnr_loss(encoded_images.detach(), images, 2)
 
-			# ssim
+			# ssim  为什么这样计算可见官方文档
 			ssim = 1 - 2 * kornia.losses.ssim_loss(encoded_images.detach(), images, window_size=11, reduction="mean")
 
 		'''
@@ -195,6 +195,7 @@ class Network:
 
 		'''
 		decoded message error rate /Dual
+		计算解码消息的错误率
 		'''
 		error_rate_C = self.decoded_message_error_rate_batch(messages, decoded_messages_C)
 		error_rate_R = self.decoded_message_error_rate_batch(messages, decoded_messages_R)
@@ -215,12 +216,14 @@ class Network:
 			"g_loss_on_decoder_F": g_loss_on_decoder_F,
 			"d_loss": d_loss
 		}
-
+		# 返回结果和图像
 		return result, (images, encoded_images, noised_images)
 
 	def decoded_message_error_rate(self, message, decoded_message):
 		length = message.shape[0]
 
+		# 大于 0 为 True
+		# 小于等于 0 为 False
 		message = message.gt(0)
 		decoded_message = decoded_message.gt(0)
 		error_rate = float(sum(message != decoded_message)) / length

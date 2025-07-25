@@ -93,9 +93,11 @@ def main():
         '''
         train
         '''
+        # 从 1 开始计数
         for step, (image, mask) in enumerate(train_dataloader, 1):
             print(device)
             image = image.to(device)
+            # (B, message_length)
             message = torch.Tensor(np.random.choice([-message_range, message_range], (image.shape[0], message_length))).to(device)
 
             result = network.train(image, message, mask)

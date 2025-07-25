@@ -19,6 +19,7 @@ class DW_EncoderDecoder(nn.Module):
 
 
 	def forward(self, image, message, mask):
+		# 这里就是全部的正向传播了
 		encoded_image = self.encoder(image, message)
 		noised_image_C, noised_image_R, noised_image_F = self.noise([encoded_image, image, mask])
 		decoded_message_C = self.decoder_C(noised_image_C)

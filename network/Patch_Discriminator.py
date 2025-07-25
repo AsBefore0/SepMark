@@ -1,4 +1,6 @@
-from . import *
+# from . import *
+import torch
+import torch.nn as nn
 
 class Patch_Discriminator(nn.Module):
     """Defines a PatchGAN discriminator"""
@@ -33,6 +35,9 @@ class Patch_Discriminator(nn.Module):
 
     def forward(self, input):
         """Standard forward."""
+        # 基本上就是一系列的卷积操作
+        # 输入 (B, 3, H, W)
+        # 最后输出 (B, 1 , H / 8, H / 8)
         return self.model(input)
 
 
